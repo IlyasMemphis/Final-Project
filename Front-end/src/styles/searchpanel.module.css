@@ -1,0 +1,103 @@
+.panel, .content, .input {
+  box-sizing: border-box;
+}
+
+
+.panel {
+  position: fixed;
+  top: 0;
+  left: 240px; /* ширина LeftPanel */
+  width: 400px;
+  height: 100vh;
+  background: #fff;
+  border-radius: 0 18px 18px 0;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.13);
+  z-index: 1000;
+  animation: slideIn .25s cubic-bezier(.4,0,.2,1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-70px); opacity: 0.8; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px 14px 24px;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.closeBtn {
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 12px;
+}
+
+.content {
+  padding: 0 24px 24px 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.inputWrapper {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.input {
+  width: 100%;
+  font-size: 16px;
+  border: 1px solid #e4e4e4;
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.empty {
+  color: #bbb;
+  margin-top: 22px;
+  font-size: 16px;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.avatar {
+  width: 39px;
+  height: 39px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.text {
+  color: #222;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+/* Для адаптива — можно скрыть panel полностью */
+@media (max-width: 900px) {
+  .panel {
+    width: 100vw;
+    left: 0;
+    border-radius: 0;
+  }
+}

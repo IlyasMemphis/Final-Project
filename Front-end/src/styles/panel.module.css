@@ -1,0 +1,156 @@
+:root{
+  --panel-bg: #fff;
+  --panel-text: #222;
+  --panel-line: #e6e6e6;
+  --panel-hover: #f7f7f7;
+
+  /* бейдж (инста-стиль) */
+  --badge-grad-top: #ff6678;
+  --badge-grad-bottom: #ed4956;
+}
+
+/* Левое меню */
+.container{
+  position: fixed;
+  top: 0; left: 0;
+  width: 240px;
+  height: 100vh;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--panel-line);
+  display: flex; flex-direction: column;
+  justify-content: flex-start; align-items: flex-start;
+  padding: 0;
+  z-index: 1100;
+}
+
+.logoWrapper{ margin: 28px 0 38px 25px; }
+.logoImg{ width: 97px; height: 54px; display:block; }
+
+.menu{
+  display: flex; flex-direction: column; gap: 12px;
+  width: 100%; margin-left: 25px;
+}
+
+/* item теперь <button>: убираем нативные стили */
+.menuItem,
+.profile{
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  outline: none;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+
+  display: flex; align-items: center;
+  gap: 18px;
+  cursor: pointer;
+  transition: background .12s ease;
+  color: var(--panel-text);
+  font-size: 20px; font-weight: 400;
+  border-radius: 12px;
+  padding: 11px 0;
+}
+
+.menuItem{
+  width: 175px;
+}
+
+/* hover/active фон */
+.menuItem:hover,
+.menuItem.active{ background: var(--panel-hover); }
+
+/* focus-visible для клавиатуры */
+.menuItem:focus-visible,
+.profile:focus-visible{
+  box-shadow: 0 0 0 3px rgba(0,149,246,.25) inset;
+  border-radius: 12px;
+}
+
+/* иконка */
+.menuIcon{
+  width: 28px; height: 28px; display:block;
+}
+
+/* обёртка иконки для бейджа */
+.menuIconWrap{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+}
+
+/* БЕЙДЖ */
+.notifBadge{
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 2;
+
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+
+  background: #ed4956;
+  color: #fff;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .2px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.menuItem:hover .notifBadge{
+  box-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+
+/* текст */
+.menuText{ font-size: 20px; font-weight: 400; }
+/* делаем жирным именно у активного item */
+.menuItem.active .menuText,
+.profile.active .menuText{ font-weight: 700; }
+
+.spacer{ flex: 1 1 auto; }
+
+/* Профиль снизу */
+.profile{
+  width: 175px;
+  margin: 0 0 28px 25px;
+}
+.profile:hover,
+.profile.active{ background: var(--panel-hover); }
+
+.profileImg{
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Мобилка: верхняя панель */
+@media (max-width: 900px){
+  .container{
+    width: 100vw;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid var(--panel-line);
+    padding: 0 12px;
+  }
+  .logoWrapper{ margin: 10px 12px 10px 0; }
+  .menu{
+    flex-direction: row; gap: 8px;
+    margin: 0 0 0 8px;
+  }
+  .menuItem{ width: auto; padding: 10px 12px; gap: 10px; }
+  .menuText{ display: none; } /* только иконки на узких */
+  .spacer{ display: none; }
+  .profile{ margin: 0 0 0 auto; padding: 10px 12px; }
+}

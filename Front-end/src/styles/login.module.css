@@ -1,0 +1,115 @@
+.wrapper {
+    /* width: 1440px; */
+    /* height: 900px; */
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    width: 935px;
+    height: 733px;
+    margin-top: 32px;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+}
+
+.right {
+    width: 350px;
+    height: 689px;
+    margin-top: 12px;
+}
+
+.formBox {
+    display: flex;
+    margin-top: 49.5px;
+    border-radius: 1px;
+    border: 1px solid #dbdbdb;
+    text-align: center;
+    flex-direction: column;
+    padding: 40px;
+    gap: 10px;
+}
+
+
+.inputClass {
+    padding: 10px;
+    border: 1px solid #dbdbdb;
+    border-radius: 3px;
+    background: #fafafa;
+}
+
+.signUpBtn {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #0095f6;
+    color: white;
+    border: none;
+    padding: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.signupBox {
+    height: 61px;
+    border: 1px;
+    border: 1px solid #dbdbdb;
+    margin-top: 10px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0;
+    color: #8e8e8e;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #dbdbdb;
+    margin: 0 10px;
+}
+
+.forgot {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-weight: 400;
+    line-height: 16px;
+    color: #00376b;
+    font-size: 13px;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.underline {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: #0095f6;
+    text-decoration: none;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+.noAccount {
+    color: #000000;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "_id": "mock_1755135913783",
+    "author": {
+      "_id": "689a044241cbf2a3f827915e",
+      "username": "user",
+      "avatar": null
+    },
+    "image": "http://localhost:3333/uploads/posts/689a044241cbf2a3f827915e_1755135913778.jpg",
+    "description": "",
+    "createdAt": "2025-08-14T01:45:13.783Z",
+    "likesCount": 0,
+    "commentsCount": 0
+  },
+  {
+    "_id": "mock_1755135765422",
+    "author": {
+      "_id": "689a044241cbf2a3f827915e",
+      "username": "user",
+      "avatar": null
+    },
+    "image": "http://localhost:3333/uploads/posts/689a044241cbf2a3f827915e_1755135765416.jpg",
+    "description": "",
+    "createdAt": "2025-08-14T01:42:45.422Z",
+    "likesCount": 0,
+    "commentsCount": 0
+  },
+  {
+    "_id": "mock_1755135651356",
+    "author": {
+      "_id": "689a044241cbf2a3f827915e",
+      "username": "user",
+      "avatar": null
+    },
+    "image": "http://localhost:3333/uploads/posts/689a044241cbf2a3f827915e_1755135651350.png",
+    "description": "",
+    "createdAt": "2025-08-14T01:40:51.356Z",
+    "likesCount": 0,
+    "commentsCount": 0
+  },
+  {
+    "_id": "mock_1755135626009",
+    "author": {
+      "_id": "689a044241cbf2a3f827915e",
+      "username": "user",
+      "avatar": null
+    },
+    "image": "http://localhost:3333/uploads/posts/689a044241cbf2a3f827915e_1755135626005.png",
+    "description": "",
+    "createdAt": "2025-08-14T01:40:26.009Z",
+    "likesCount": 0,
+    "commentsCount": 0
+  }
+]

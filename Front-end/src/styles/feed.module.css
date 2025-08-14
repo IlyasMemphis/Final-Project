@@ -1,0 +1,57 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px 32px;
+  padding: 40px 0 0 0;
+  min-width: 900px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.allUpdates {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 1000px;
+  /* width: 100%; */
+  margin: 0 auto;
+  padding: 36px 0 44px 0;
+  border-radius: 18px;
+  /* background: #fff; */
+  /* box-shadow: 0 2px 20px rgba(80,80,80,0.09); */
+  /* border: 1.5px solid #ececec; */
+}
+.checkIcon {
+  width: 57px;
+  height: 57px;
+  margin-bottom: 16px;
+  display: block;
+}
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 7px;
+  color: #333;
+  text-align: center;
+}
+.text {
+  font-size: 13px;
+  color: #979797;
+  text-align: center;
+}
+@media (max-width: 1200px) {
+  .grid, .allUpdates {
+    max-width: 98vw;
+    min-width: 350px;
+  }
+  .allUpdates {
+    padding: 24px 0 32px 0;
+  }
+  .checkIcon {
+    width: 38px;
+    height: 38px;
+  }
+  .title {
+    font-size: 15px;
+  }
+}

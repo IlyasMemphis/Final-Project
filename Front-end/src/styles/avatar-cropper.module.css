@@ -1,0 +1,92 @@
+.backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+}
+
+.modal{
+  width: min(700px, 92vw);
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,.25);
+  padding: 20px 20px 16px;
+}
+
+.title{
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.frame{
+  width: min(520px, 86vw);
+  height: min(520px, 86vw);
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #fafafa;
+  position: relative;
+  user-select: none;
+  cursor: grab;
+}
+
+.frame img{
+  /* Жёстко центрируем картинку и отключаем глобальные max-width:100% */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: center center;
+  will-change: transform;
+  max-width: none;
+  max-height: none;
+  pointer-events: none;
+}
+
+.grabbing{ cursor: grabbing; }
+
+.empty{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.slider{
+  width: 100%;
+  margin: 6px 0 4px;
+}
+
+.hint{
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.actions{
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btnPrimary{
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+}
+
+.btnSecondary{
+  background: #f2f2f2;
+  color: #111;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+}

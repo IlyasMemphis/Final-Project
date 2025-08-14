@@ -1,0 +1,159 @@
+:root{
+  --bg:#fff;
+  --panel:#ffffff;
+  --text:#0f1419;
+  --muted:#6b7280;
+  --line:#eef0f2;
+  --brand:#7C61FF;
+  --brand2:#9C66FF;
+  --shadow:0 10px 40px rgba(0,0,0,.08);
+}
+
+/* ВНЕШНЯЯ СТРАНИЦА: занимаем всю высоту окна и не даём внешнего скролла */
+.page{
+  box-sizing:border-box;
+  height:100dvh;          /* <— ключ: фиксируем высоту страницы под окно */
+  width:100%;
+  display:flex;
+  justify-content:center;
+  padding:16px;
+  background:var(--bg);
+  overflow:hidden;        /* внешний скролл отрезан */
+}
+
+/* Карточка чата: тоже на всю высоту, внутри — grid */
+.chatCard{
+  box-sizing:border-box;
+  width:100%;
+  max-width:1024px;
+  height:100%;            /* <— растягиваем под .page */
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+
+  display:grid;           /* layout: topbar | hero | list | input */
+  grid-template-rows: 56px auto 1fr auto;
+  min-height:0;           /* важно для корректной высоты 1fr */
+  overflow:hidden;        /* отрезаем внешний скролл */
+}
+
+/* topbar */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px;
+  background:rgba(255,255,255,.86);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.topbarLeft{ display:flex; align-items:center; gap:12px; }
+.topbarAva{
+  width:32px;height:32px;border-radius:50%;object-fit:cover;background:#eef2f7;cursor:pointer;
+}
+.topbarName{
+  border:none;background:transparent;cursor:pointer;
+  font-weight:800;color:#111;font-size:15px;
+}
+.topbarName:hover{ text-decoration:underline; }
+.viewBtn{
+  border:1px solid var(--line);
+  background:#fff;border-radius:10px;padding:8px 14px; font-weight:700; font-size:14px;
+  cursor:pointer;
+}
+.viewBtn:hover{ background:#f8f8f8; }
+
+/* hero */
+.hero{
+  display:flex;flex-direction:column; align-items:center; gap:8px;
+  padding:20px 16px 8px;
+}
+.heroAva{
+  width:72px;height:72px;border-radius:50%;object-fit:cover;background:#eef2f7;cursor:pointer;
+}
+.heroName{ font-weight:800;color:#111;font-size:16px; }
+.heroMeta{ color:#9aa0a6;font-size:12px; }
+
+/* СПИСОК — ЕДИНСТВЕННЫЙ СКРОЛЛ ВНУТРИ КАРТОЧКИ */
+.list{
+  min-height:0;                 /* критично вместе с grid 1fr */
+  padding:6px 16px 18px;
+  overflow-y:auto;              /* скроллим только здесь */
+  -webkit-overflow-scrolling:touch;
+  background:linear-gradient(180deg,#fff 0%, #fff 24%, #fcfcff 100%);
+}
+.list::-webkit-scrollbar{ width:10px }
+.list::-webkit-scrollbar-thumb{ background:#e8e8ee; border-radius:8px }
+.list::-webkit-scrollbar-thumb:hover{ background:#dcdcec }
+
+/* разделитель дат */
+.dayDivider{ display:flex; justify-content:center; margin:12px 0 10px; }
+.dayDivider>span{
+  background:#fff; padding:6px 10px; border:1px solid var(--line); color:#7b8190;
+  font-size:12px; border-radius:999px; font-weight:700;
+  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+}
+
+/* сообщения */
+.msgRow{ display:flex; align-items:flex-end; gap:10px; margin:6px 0; }
+.mine{ justify-content:flex-end; }
+.msgAva{
+  width:28px;height:28px;border-radius:50%;object-fit:cover;background:#eef2f7;cursor:pointer;
+}
+.msgBlock{ max-width:60%; display:flex; flex-direction:column; gap:4px; }
+@media (max-width: 900px){ .msgBlock{ max-width:76%; } }
+
+.bubble{
+  padding:10px 12px;
+  border-radius:18px;
+  line-height:1.26;
+  font-size:14px;
+  word-break:break-word;
+  box-shadow: 0 2px 10px rgba(17,24,39,.06);
+}
+.bubbleOther{ background:#f1f3f5; color:#111; border-top-left-radius:8px; }
+.bubbleMine{
+  background:linear-gradient(135deg, var(--brand) 0%, var(--brand2) 100%);
+  color:#fff; border-top-right-radius:8px;
+}
+.msgTime{ color:#9aa0a6; font-size:11.5px; padding:0 4px 0 6px; }
+.timeRight{ text-align:right; }
+
+/* пустые состояния */
+.noMessages{ margin: 18px auto 24px; color:#9aa0a6; font-size:14px; font-weight:600; }
+.emptyChat{ display:flex; align-items:center; justify-content:center; color:#8b93a2; font-weight:600; }
+
+/* ИНПУТ — всегда видим, занимает свою строку grid */
+.inputRow{
+  display:flex; align-items:center; gap:10px;
+  padding:14px; border-top:1px solid var(--line);
+  background:#fff;
+}
+.input{
+  flex:1; height:44px; border:1px solid var(--line); border-radius:999px; padding:0 16px;
+  outline:none; font-size:14px; background:#fff;
+}
+.input:focus{ border-color:#d9dcff; box-shadow:0 0 0 3px rgba(124,97,255,.12); }
+.sendBtn{
+  height:44px; min-width:88px;
+  padding:0 16px; border:none; border-radius:12px;
+  background:linear-gradient(135deg, var(--brand) 0%, var(--brand2) 100%);
+  color:#fff; font-weight:800; cursor:pointer;
+  transition:transform .06s ease, filter .15s ease;
+}
+.sendBtn:disabled{ opacity:.6; cursor:not-allowed; }
+.sendBtn:active{ transform:translateY(1px); }
+
+/* ошибки */
+.errorBar{
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:72px;
+  background:#111; color:#fff; padding:8px 12px; border-radius:10px;
+  font-size:12px; box-shadow: 0 8px 30px rgba(0,0,0,.2);
+}
+
+/* адаптив */
+@media (max-width: 720px){
+  .chatCard{ border-radius:12px; }
+  .topbar{ padding:12px 14px; }
+}

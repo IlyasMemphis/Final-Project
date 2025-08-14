@@ -1,0 +1,125 @@
+.page {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px 80px;
+  box-sizing: border-box;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1024px;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: 24px;
+  align-items: start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.avatar {
+  width: 148px;
+  height: 148px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.headCol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.row1 {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.username {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.editBtn {
+  background: #f2f2f2;
+  color: #111;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.row2 {
+  display: flex;
+  gap: 24px;
+  color: #333;
+}
+
+.bio {
+  white-space: pre-wrap;
+  color: #111;
+}
+
+/* >>> ССЫЛКА НА САЙТ */
+.website {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2563eb;            /* приятный синий */
+  text-decoration: none;
+  max-width: 100%;
+}
+.website:hover { text-decoration: underline; }
+.website svg { flex: none; opacity: .9; }
+.websiteText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  font-weight: 500;
+}
+/* <<< ССЫЛКА НА САЙТ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding-top: 24px;
+}
+
+.cell {
+  border: none;
+  padding: 0;
+  background: transparent;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.cell img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #888;
+  padding: 32px 0;
+}
+
+.center {
+  display: grid;
+  place-items: center;
+  height: 50vh;
+  color: #666;
+}

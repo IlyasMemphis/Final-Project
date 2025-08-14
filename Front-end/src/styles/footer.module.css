@@ -1,0 +1,39 @@
+.footer{
+  padding: 24px 0 32px;
+  text-align: center;
+  color: #9aa0a6;
+}
+
+.nav{
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.link{
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  font-size: 12px;
+  line-height: 1;
+  color: #9aa0a6;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background .15s ease, color .15s ease;
+}
+.link:hover{
+  background: #f6f6f6;
+  color: #111;
+  text-decoration: underline;
+}
+.active{
+  color: #111;
+  font-weight: 700;
+}
+
+.copy{
+  font-size: 11px;
+  color: #b0b7c3;
+}
