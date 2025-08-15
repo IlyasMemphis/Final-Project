@@ -88,7 +88,8 @@ export default function ProfilePage() {
             ? `${API}/api/profile/${id}`
             : `${API}/api/profile/${encodeURIComponent(id)}`,
         ];
-        const data = await tryFetch(urls, { headers: header });
+        // важное: выключаем кэш браузера
+        const data = await tryFetch(urls, { headers: header, cache: "no-store" });
 
         if (!abort) {
           setUser(data.user);
@@ -127,6 +128,19 @@ export default function ProfilePage() {
     return normalizeUrl(w);
   }, [user]);
 
+  // Текст about/bio с фоллбэком на локальное (если это мой профиль)
+  const aboutText = useMemo(() => {
+    const serverText = ((user?.about ?? user?.bio) || "").trim();
+    if (!itsMe) return serverText;
+    try {
+      const localUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const localText = ((localUser?.about ?? localUser?.bio) || "").trim();
+      return localText || serverText;
+    } catch {
+      return serverText;
+    }
+  }, [user, itsMe]);
+
   // проверка follow только для чужого профиля
   useEffect(() => {
     if (!user?._id || itsMe) return;
@@ -154,7 +168,7 @@ export default function ProfilePage() {
       const method = isFollowing ? "DELETE" : "POST";
       const r = await fetch(`${API}/api/follow`, {
         method,
-        headers: { "Content-Type": "application/json", ...header },
+               headers: { "Content-Type": "application/json", ...header },
         body: JSON.stringify({ userIdToFollow: user._id }),
       });
       if (r.ok) {
@@ -172,7 +186,6 @@ export default function ProfilePage() {
   // === LOGOUT ===
   const handleLogout = async () => {
     try {
-      // если есть роут — ок; если нет, просто проигнорируем ошибку
       await fetch(`${API}/api/auth/logout`, {
         method: "POST",
         headers: { ...header },
@@ -180,9 +193,7 @@ export default function ProfilePage() {
     } finally {
       try { localStorage.removeItem("token"); } catch {}
       try { localStorage.removeItem("user"); } catch {}
-      // редирект на экран логина
       navigate("/login", { replace: true });
-      // на всякий случай очистим состояние приложения
       setTimeout(() => window.location.reload(), 0);
     }
   };
@@ -297,8 +308,8 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* БИО */}
-            {user.bio?.trim() && <div className={styles.bio}>{user.bio}</div>}
+            {/* БИО/ABOUT */}
+            {aboutText && <div className={styles.bio}>{aboutText}</div>}
 
             {/* ССЫЛКА НА САЙТ */}
             {website && (

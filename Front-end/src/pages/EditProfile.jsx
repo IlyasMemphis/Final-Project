@@ -52,7 +52,7 @@ export default function EditProfile() {
   // управляемые поля
   const [username, setUsername] = useState(me?.username || "");
   const [website, setWebsite] = useState(me?.website || "");
-  const [bio, setBio] = useState(me?.bio || "");
+  const [bio, setBio] = useState(me?.about || me?.bio || ""); // ← читаем и about, и bio
 
   const [saving, setSaving] = useState(false);
 
@@ -170,12 +170,13 @@ export default function EditProfile() {
     }
   }
 
-  // ===== сохранение профиля =======================================
+  // ===== сохранение профиля ======================================
   async function handleSave(e) {
     e?.preventDefault?.();
     setSaving(true);
     try {
-      const payload = { username, website, bio };
+      // Отправляем И bio, И about — максимальная совместимость
+      const payload = { username, website, bio, about: bio };
       await tryFetch(
         [
           `${API}/api/users/me`,
@@ -189,6 +190,7 @@ export default function EditProfile() {
           body: JSON.stringify(payload),
         }
       );
+
       const next = { ...me, ...payload };
       setMe(next);
       localStorage.setItem("user", JSON.stringify(next));

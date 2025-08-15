@@ -80,12 +80,14 @@
   height: 39px;
   border-radius: 50%;
   object-fit: cover;
+  cursor: pointer;
 }
 
 .text {
   color: #222;
   font-size: 16px;
   font-weight: 400;
+  cursor: pointer;
 }
 
 .title {

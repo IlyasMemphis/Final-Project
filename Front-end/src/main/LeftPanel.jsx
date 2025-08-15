@@ -98,6 +98,7 @@ export default function LeftPanel({
       try {
         const res = await fetch(`${API}/api/notifications`, {
           headers: authHeader(token),
+          cache: "no-store",
         });
         if (!res.ok) return;
         const list = await res.json();
@@ -108,20 +109,18 @@ export default function LeftPanel({
           setNotifUnread(count);
         }
       } catch {
-        /* оставляем предыдущее значение */
+        /* keep previous */
       }
     };
 
     fetchUnread();
 
     const onFocus = () => fetchUnread();
-    // мгновенное изменение по клику в панели
     const onLocalDelta = (e) => {
       const delta = Number(e?.detail?.delta || 0);
       if (!delta) return;
       setNotifUnread((c) => Math.max(0, c + delta));
     };
-    // мягкий пересчёт (после удачного PATCH)
     const onSync = () => fetchUnread();
 
     window.addEventListener("focus", onFocus);
@@ -136,10 +135,19 @@ export default function LeftPanel({
     };
   }, [token, unreadCountProp]);
 
-  /* ================= MESSAGES BADGE ================= */
+  /* ================= MESSAGES BADGE (debounce + serialize) ================= */
   useEffect(() => {
     if (!token) { dmRef.current = 0; setDmUnread(0); return; }
-    let ac = new AbortController();
+
+    // один контроллер на жизненный цикл эффекта (для unmount)
+    const effectAbort = new AbortController();
+
+    // дедупликация/сериализация
+    const inFlightRef = { current: false };
+    const queuedRef = { current: false };
+    const timerRef = { current: null };
+    const lastRunRef = { current: 0 };
+    const MIN_GAP = 200; // мс между запросами
 
     const myId = (() => {
       try { return idStr((user?._id) || JSON.parse(localStorage.getItem("user") || "{}")._id); }
@@ -168,37 +176,73 @@ export default function LeftPanel({
       ];
       for (const url of urls) {
         try {
-          const r = await fetch(url, { headers: authHeader(token), signal });
+          const r = await fetch(url, {
+            headers: authHeader(token),
+            signal,
+            cache: "no-store",
+          });
           if (!r.ok) continue;
           const data = await r.json();
           const list = Array.isArray(data) ? data : (data?.threads || data?.data || []);
           return Array.isArray(list) ? list : [];
-        } catch {/* try next */}
+        } catch (e) {
+          if (e?.name === "AbortError") return []; // тихо выходим, если размонт
+          // try next
+        }
       }
-      throw new Error("No threads endpoint");
+      return [];
     };
 
-    const fetchDm = async () => {
+    const doFetch = async () => {
+      if (inFlightRef.current) { queuedRef.current = true; return; }
+      inFlightRef.current = true;
       try {
-        const threads = await loadThreads(ac.signal);
+        const threads = await loadThreads(effectAbort.signal);
         const count = computeUnreadCount(threads);
         dmRef.current = count;
         setDmUnread(count);
-      } catch {
-        /* не сбрасываем в 0 на ошибке */
+      } finally {
+        inFlightRef.current = false;
+        if (queuedRef.current) {
+          queuedRef.current = false;
+          // минимальный интервал между подряд идущими запросами
+          const elapsed = Date.now() - lastRunRef.current;
+          const delay = elapsed >= MIN_GAP ? 0 : MIN_GAP - elapsed;
+          timerRef.current = setTimeout(() => {
+            lastRunRef.current = Date.now();
+            doFetch();
+          }, delay);
+        }
       }
     };
 
-    fetchDm();
+    const schedule = () => {
+      const now = Date.now();
+      const elapsed = now - lastRunRef.current;
+      if (elapsed >= MIN_GAP && !inFlightRef.current) {
+        lastRunRef.current = now;
+        doFetch();
+      } else {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        const delay = Math.max(0, MIN_GAP - elapsed);
+        timerRef.current = setTimeout(() => {
+          lastRunRef.current = Date.now();
+          doFetch();
+        }, delay);
+      }
+    };
 
-    const onFocus = () => fetchDm();
-    const onVisibility = () => { if (document.visibilityState === "visible") fetchDm(); };
-    const onNew = () => setTimeout(fetchDm, 120);
-    const onSync = () => fetchDm();
+    // первичная загрузка
+    schedule();
+
+    const onFocus = () => schedule();
+    const onVisibility = () => { if (document.visibilityState === "visible") schedule(); };
+    const onNew = () => schedule();
+    const onSync = () => schedule();
     const onRead = () => {
       dmRef.current = Math.max(0, dmRef.current - 1);
       setDmUnread(dmRef.current);
-      setTimeout(fetchDm, 150);
+      schedule();
     };
 
     window.addEventListener("focus", onFocus);
@@ -209,7 +253,8 @@ export default function LeftPanel({
     window.addEventListener("thread:read", onRead);
 
     return () => {
-      ac.abort();
+      effectAbort.abort(); // корректно завершаем при размонтаже
+      if (timerRef.current) clearTimeout(timerRef.current);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("dm:new", onNew);
