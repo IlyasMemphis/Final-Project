@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import styles from "../styles/register.module.css";
 import img from "../assets/ICHGRA 2.svg";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import http from "../config/http";
 
 const schema = yup.object().shape({
   email: yup.string().email("Invalid email").required("Email is required"),
@@ -37,7 +37,7 @@ export default function Register() {
   const onSubmit = async (data) => {
     try {
         setServerError("");
-        const res = await axios.post("http://localhost:3333/api/auth/register", data);
+        const res = await http.post("/api/auth/register", data);
         console.log("Registration successful:", res.data);
         navigate("/login");
     } catch (error) {

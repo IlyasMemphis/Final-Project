@@ -64,6 +64,47 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
     setCommentsCount(Number.isFinite(post?.commentsCount) ? post.commentsCount : 0);
   }, [post?._id, post?.likes, post?.likesCount, post?.commentsCount, currentUserId]);
 
+  // Актуальные лайки из API (источник правды: коллекция Like)
+  useEffect(() => {
+    if (!post?._id) return;
+    let abort = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API}/api/likes/${post._id}/info`, {
+          headers: { ...buildAuthHeader() },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!abort) {
+          setLikes(Number.isFinite(data?.count) ? data.count : 0);
+          setLiked(!!data?.liked);
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => { abort = true; };
+  }, [post?._id, currentUserId]);
+
+  // Актуальное количество комментариев
+  useEffect(() => {
+    if (!post?._id) return;
+    let abort = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API}/api/comments/${post._id}`, {
+          headers: { ...buildAuthHeader() },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!abort) setCommentsCount(Array.isArray(data) ? data.length : 0);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => { abort = true; };
+  }, [post?._id]);
+
   // Follow check (кэшируется по authorId, чтобы не дёргать сеть для каждого ререндера)
   useEffect(() => {
     if (!authorId || !currentUserId || toId(authorId) === toId(currentUserId)) {
@@ -221,7 +262,15 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
         <span className={styles.time}>{formatTimeAgo(post.createdAt || new Date())}</span>
       </div>
 
-      {post.image && <img src={post.image} alt="" className={styles.image} />}
+      {post.image && (
+        <img
+          src={post.image}
+          alt="post"
+          className={styles.image}
+          onClick={() => setModalOpen(true)}
+          style={{ cursor: "pointer" }}
+        />
+      )}
 
       <div className={styles.actions}>
         <button className={styles.iconBtn} onClick={handleLike}>

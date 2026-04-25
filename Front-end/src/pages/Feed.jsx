@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import PostCard from "./PostCard";
 import styles from '../styles/feed.module.css';
 import checkmark from "../assets/check mark.svg"
+import http from "../config/http";
 
 export default function Feed() {
   const [posts, setPosts] = useState([]);
@@ -9,11 +10,15 @@ export default function Feed() {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetch("/api/posts", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then((r) => r.json())
-      .then(setPosts);
+    let aborted = false;
+    http.get("/api/posts")
+      .then((r) => {
+        if (!aborted) setPosts(Array.isArray(r.data) ? r.data : []);
+      })
+      .catch(() => {
+        if (!aborted) setPosts([]);
+      });
+    return () => { aborted = true; };
   }, [token]);
 
   if (!posts.length) return <div>Нет постов</div>;

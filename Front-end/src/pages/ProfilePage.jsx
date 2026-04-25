@@ -67,6 +67,9 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalPost, setModalPost] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [error, setError] = useState("");
 
   // follow state (для чужого профиля)
@@ -200,9 +203,13 @@ export default function ProfilePage() {
   };
 
   const handleDeleteAccount = async () => {
-    const ok = window.confirm("Delete account permanently? This action cannot be undone.");
-    if (!ok) return;
+    setDeleteError("");
+    setDeleteModalOpen(true);
+  };
 
+  const confirmDeleteAccount = async () => {
+    setDeleteLoading(true);
+    setDeleteError("");
     try {
       const res = await fetch(`${API}/api/auth/account`, {
         method: "DELETE",
@@ -215,7 +222,9 @@ export default function ProfilePage() {
       navigate("/register", { replace: true });
       setTimeout(() => window.location.reload(), 0);
     } catch {
-      window.alert("Failed to delete account");
+      setDeleteError("Failed to delete account. Please try again.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -394,6 +403,37 @@ export default function ProfilePage() {
           currentUser={currentUser}
           onClose={() => setModalPost(null)}
         />
+      )}
+
+      {deleteModalOpen && (
+        <div className={styles.confirmOverlay} onMouseDown={() => !deleteLoading && setDeleteModalOpen(false)}>
+          <div className={styles.confirmModal} onMouseDown={(e) => e.stopPropagation()}>
+            <h3 className={styles.confirmTitle}>Delete account?</h3>
+            <p className={styles.confirmText}>
+              This will permanently remove your profile, posts, likes, comments and messages.
+              This action cannot be undone.
+            </p>
+            {deleteError && <div className={styles.confirmError}>{deleteError}</div>}
+            <div className={styles.confirmActions}>
+              <button
+                type="button"
+                className={styles.confirmCancel}
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.confirmDelete}
+                onClick={confirmDeleteAccount}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? "Deleting..." : "Delete account"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

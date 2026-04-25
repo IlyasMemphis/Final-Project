@@ -67,6 +67,126 @@ async function ensureComment(user, post, text) {
   return Comment.create({ user, post, text });
 }
 
+async function boostEngagement({ usersByUsername, demoViewer }) {
+  const engagementUsers = [
+    usersByUsername['nora.lang'],
+    usersByUsername['alex.weber'],
+    usersByUsername['sara.klein'],
+    usersByUsername['mike.ross'],
+    usersByUsername['emma.stone'],
+    usersByUsername['liam.gray'],
+    demoViewer,
+  ].filter(Boolean);
+
+  const commentsPool = [
+    'Great shot 👏',
+    'Looks awesome!',
+    'Very clean composition.',
+    'Love this mood.',
+    'Nice color palette.',
+    'This one is fire 🔥',
+    'Strong post.',
+    'Cool details here.',
+    'Really like this.',
+    'Perfect timing.',
+  ];
+
+  const allPosts = await Post.find({}).sort({ createdAt: -1 }).limit(50).lean();
+  for (const post of allPosts) {
+    const authorId = String(post.author?._id || post.author || '');
+    const candidates = engagementUsers.filter((u) => String(u._id) !== authorId);
+    const likeTake = Math.min(8, candidates.length);
+    const commentTake = Math.min(6, candidates.length);
+
+    for (let i = 0; i < likeTake; i++) {
+      await ensureLike(candidates[i]._id, post._id);
+    }
+
+    for (let i = 0; i < commentTake; i++) {
+      const text = commentsPool[(i + post._id.toString().length) % commentsPool.length];
+      await ensureComment(candidates[i]._id, post._id, text);
+    }
+  }
+}
+
+async function ensureBotUsers(count = 80) {
+  const bots = [];
+  for (let i = 1; i <= count; i++) {
+    const padded = String(i).padStart(3, '0');
+    const username = `user.${padded}`;
+    const email = `user.${padded}@ichgram.demo`;
+    const bot = await upsertUser({
+      email,
+      username,
+      fullName: `User ${padded}`,
+      password: 'DemoPass123!',
+      avatar: `https://i.pravatar.cc/300?img=${(i % 70) + 1}`,
+    });
+    bots.push(bot);
+  }
+  return bots;
+}
+
+async function boostBigNumbers({ usersByUsername, demoViewer }) {
+  const coreUsers = [
+    usersByUsername['nora.lang'],
+    usersByUsername['alex.weber'],
+    usersByUsername['sara.klein'],
+    usersByUsername['mike.ross'],
+    usersByUsername['emma.stone'],
+    usersByUsername['liam.gray'],
+    demoViewer,
+  ].filter(Boolean);
+
+  const botUsers = await ensureBotUsers(80);
+  const allUsers = [...coreUsers, ...botUsers];
+
+  const commentsPool = [
+    'Amazing post!',
+    'Love this one 🔥',
+    'Very inspiring.',
+    'So clean and sharp.',
+    'Great composition.',
+    'Colors are perfect.',
+    'This deserves more reach.',
+    'Looks super professional.',
+    'Huge fan of this shot.',
+    'Excellent work!',
+    'Insane quality 👏',
+    'Aesthetic level 100.',
+    'Masterpiece honestly.',
+    'Keep posting more!',
+    'Fantastic mood.',
+    'Visuals are crazy good.',
+    'This is top tier.',
+    'Beautiful details.',
+    'Perfect timing.',
+    'So underrated.',
+    'Powerful and elegant.',
+    'Big like from me.',
+  ];
+
+  const posts = await Post.find({}).sort({ createdAt: -1 }).limit(80).lean();
+  for (const post of posts) {
+    const authorId = String(post.author?._id || post.author || '');
+    const candidates = allUsers.filter((u) => String(u._id) !== authorId);
+    if (!candidates.length) continue;
+
+    const likeTarget = 50 + Math.floor(Math.random() * 101); // 50..150
+    const commentTarget = 10 + Math.floor(Math.random() * 11); // 10..20
+
+    for (let i = 0; i < Math.min(likeTarget, candidates.length); i++) {
+      await ensureLike(candidates[i]._id, post._id);
+    }
+
+    for (let i = 0; i < Math.min(commentTarget, candidates.length); i++) {
+      const bot = candidates[(i * 7) % candidates.length];
+      const text = commentsPool[(i + post._id.toString().length) % commentsPool.length];
+      await ensureComment(bot._id, post._id, text);
+    }
+  }
+}
+
 async function ensureMessage(sender, peer, text, unreadForPeer = false) {
   const exists = await Message.findOne({ sender, peer, text });
   if (exists) return exists;
@@ -191,6 +311,9 @@ async function run() {
 
   await ensureComment(users['liam.gray']._id, posts[2]._id, 'Nice color grading.');
   await ensureComment(demoViewer._id, posts[2]._id, 'Clean UX mood here.');
+
+  await boostEngagement({ usersByUsername: users, demoViewer });
+  await boostBigNumbers({ usersByUsername: users, demoViewer });
 
   await ensureMessage(users['alex.weber']._id, demoViewer._id, 'Hey! Could you review the latest prototype?', true);
   await ensureMessage(users['sara.klein']._id, demoViewer._id, 'I left a comment on your post draft.', true);
