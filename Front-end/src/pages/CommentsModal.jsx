@@ -8,8 +8,9 @@ import commentIcon from "../assets/comment.svg";
 import smileIcon from "../assets/smile.svg";
 import { formatTimeAgo } from "../utils/utils.js";
 import { buildAuthHeader } from "../utils/authHeader";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 // безопасно достаём id текущего пользователя
 function getCurrentUserIdFromStorage() {

@@ -4,8 +4,9 @@ import styles from "../styles/profile.module.css";
 import defaultAvatar from "../assets/Default avatar.svg";
 import CommentsModal from "../pages/CommentsModal";
 import { buildAuthHeader } from "../utils/authHeader";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 function isHex24(v) {
   return /^[0-9a-fA-F]{24}$/.test(String(v || ""));
@@ -198,6 +199,26 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    const ok = window.confirm("Delete account permanently? This action cannot be undone.");
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`${API}/api/auth/account`, {
+        method: "DELETE",
+        headers: { ...header },
+      });
+      if (!res.ok) throw new Error("Failed to delete account");
+
+      try { localStorage.removeItem("token"); } catch {}
+      try { localStorage.removeItem("user"); } catch {}
+      navigate("/register", { replace: true });
+      setTimeout(() => window.location.reload(), 0);
+    } catch {
+      window.alert("Failed to delete account");
+    }
+  };
+
   if (loading)
     return (
       <div className={styles.page}>
@@ -257,6 +278,22 @@ export default function ProfilePage() {
                     }}
                   >
                     Log out
+                  </button>
+
+                  <button
+                    onClick={handleDeleteAccount}
+                    title="Delete account"
+                    style={{
+                      background: "#fff",
+                      color: "#c62828",
+                      border: "1px solid #ffcaca",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Delete account
                   </button>
                 </div>
               ) : (

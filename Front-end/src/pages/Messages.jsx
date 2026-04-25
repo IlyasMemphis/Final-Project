@@ -3,8 +3,9 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "re
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import styles from "../styles/messages-page.module.css";
 import defaultAvatar from "../assets/Default avatar.svg";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 /* ---------- helpers ---------- */
 function makeAuthHeader(raw) {
@@ -62,27 +63,18 @@ const ENDPOINTS = {
   threads(token) {
     return [
       { url: `${API}/api/messages/threads`, init: { headers: makeAuthHeader(token) } },
-      { url: `${API}/api/threads`,         init: { headers: makeAuthHeader(token) } },
-      { url: `${API}/api/messages`,         init: { headers: makeAuthHeader(token) } },
-      { url: `${API}/messages/threads`,     init: { headers: makeAuthHeader(token) } },
     ];
   },
   history(peerId, token) {
     return [
-      { url: `${API}/api/messages/history/${peerId}`,        init: { headers: makeAuthHeader(token) } },
       { url: `${API}/api/messages/${peerId}`,                init: { headers: makeAuthHeader(token) } },
       { url: `${API}/api/messages/thread/${peerId}`,         init: { headers: makeAuthHeader(token) } },
-      { url: `${API}/api/messages/history?peerId=${peerId}`, init: { headers: makeAuthHeader(token) } },
     ];
   },
   send(peerId, bodyText, token) {
     const headers = { "Content-Type": "application/json", ...makeAuthHeader(token) };
     return [
-      { url: `${API}/api/messages/send`,           init: { method: "POST", headers, body: JSON.stringify({ peerId, text: bodyText }) } },
       { url: `${API}/api/messages`,                init: { method: "POST", headers, body: JSON.stringify({ peerId, text: bodyText }) } },
-      { url: `${API}/api/messages`,                init: { method: "POST", headers, body: JSON.stringify({ to: peerId, text: bodyText }) } },
-      { url: `${API}/api/messages/send/${peerId}`, init: { method: "POST", headers, body: JSON.stringify({ text: bodyText }) } },
-      { url: `${API}/api/messages/${peerId}`,      init: { method: "POST", headers, body: JSON.stringify({ text: bodyText }) } },
     ];
   },
 };

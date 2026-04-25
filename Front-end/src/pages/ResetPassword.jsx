@@ -1,8 +1,9 @@
 // Front-end/src/pages/ResetPassword.jsx
 import React, { useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 export default function ResetPassword() {
   const { token: tokenFromParam } = useParams();

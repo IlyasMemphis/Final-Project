@@ -20,8 +20,9 @@ import heartBlackImg from "../assets/heart - black.svg";
 
 import createImg from "../assets/Img - Новая публикация.svg";
 import defaultAvatar from "../assets/Default avatar.svg";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 function authHeader(token) {
   const t = (token ?? localStorage.getItem("token") ?? "")
@@ -168,12 +169,7 @@ export default function LeftPanel({
     };
 
     const loadThreads = async (signal) => {
-      const urls = [
-        `${API}/api/messages/threads`,
-        `${API}/api/threads`,
-        `${API}/api/messages`,
-        `${API}/messages/threads`,
-      ];
+      const urls = [`${API}/api/messages/threads`];
       for (const url of urls) {
         try {
           const r = await fetch(url, {

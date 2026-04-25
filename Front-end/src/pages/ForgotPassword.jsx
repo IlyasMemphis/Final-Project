@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import styles from "../styles/forgot.module.css";
 import img1 from "../assets/Lock.svg";
 import img from "../assets/ICHGRA 2.svg";
-import axios from "axios";
+import http from "../config/http";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -23,11 +23,11 @@ const ForgotPassword = () => {
     }
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:3333/api/auth/forgot-password', { email });
+      const res = await http.post('/api/auth/forgot-password', { email });
       setSuccessMessage(res.data?.message || "Check your email for further instructions");
-      if (res.data?.devLink) setDevLink(res.data.devLink); // подсказка в DEV
+      if (res.data?.devLink) setDevLink(res.data.devLink);
     } catch (err) {
-      setServerError(err.response?.data?.message || "Something went wrong");
+      setServerError(err?.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }

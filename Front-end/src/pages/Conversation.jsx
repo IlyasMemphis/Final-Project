@@ -2,8 +2,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import styles from "../styles/messages.module.css";
 import defaultAvatar from "../assets/Default avatar.svg";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 function buildAuthHeader(rawToken) {
   const t = rawToken ? String(rawToken).replace(/^"+|"+$/g, "").trim() : "";

@@ -2,8 +2,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import CreatePostModal from "./CreatePostModal.jsx";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 /** безопасное чтение localStorage JSON */
 function readJSON(key) {
