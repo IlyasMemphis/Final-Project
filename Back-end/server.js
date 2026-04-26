@@ -29,6 +29,7 @@ dotenv.config()
 const app = express()
 const server = http.createServer(app)
 const io = socketIo(server, { cors: { origin: '*' } })
+app.set('trust proxy', 1)
 
 const cors = require('cors')
 app.use(cors({ origin: '*' }))
@@ -65,7 +66,9 @@ function getUserIdFromToken(req) {
   } catch { return null }
 }
 function buildPublicUrl(req, rel) {
-  return `${req.protocol}://${req.get('host')}${rel.startsWith('/') ? '' : '/'}${rel}`
+  const xfProto = (req.headers['x-forwarded-proto'] || '').toString().split(',')[0].trim()
+  const proto = xfProto || req.protocol || 'http'
+  return `${proto}://${req.get('host')}${rel.startsWith('/') ? '' : '/'}${rel}`
 }
 function safeReadJson(file, fallback = []) {
   try {

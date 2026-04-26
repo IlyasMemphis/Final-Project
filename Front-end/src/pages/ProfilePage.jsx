@@ -92,6 +92,14 @@ export default function ProfilePage() {
             ? `${API}/api/profile/${id}`
             : `${API}/api/profile/${encodeURIComponent(id)}`,
         ];
+        const localUser = currentUser || (() => {
+          try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
+        })();
+
+        if (localUser?._id) {
+          urls.push(`${API}/api/users/profile/${localUser._id}`);
+          urls.push(`${API}/api/users/${localUser._id}`);
+        }
         let data = null;
         const isMyProfileRequest =
           token && (id === "me" || (currentUser?._id && String(id) === String(currentUser._id)));
@@ -110,9 +118,6 @@ export default function ProfilePage() {
             if (!abort) navigate("/login", { replace: true });
             return;
           } else if (meRes.status === 404) {
-            const localUser = currentUser || (() => {
-              try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
-            })();
             if (localUser) {
               data = {
                 user: {

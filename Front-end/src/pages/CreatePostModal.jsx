@@ -126,6 +126,13 @@ export default function CreatePostModal({
         }
       }
       const saved = await tryEach(tries);
+      if (!saved.author && currentUser?._id) {
+        saved.author = {
+          _id: currentUser._id,
+          username: currentUser.username || "user",
+          avatar: currentUser.avatar || "",
+        };
+      }
 
       try { window.dispatchEvent(new CustomEvent("post:created", { detail: saved })); } catch {}
       onCreated?.(saved);
