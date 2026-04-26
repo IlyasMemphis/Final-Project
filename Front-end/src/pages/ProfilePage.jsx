@@ -103,11 +103,31 @@ export default function ProfilePage() {
 
           if (meRes.ok) {
             data = await meRes.json();
-          } else if (meRes.status === 401 || meRes.status === 404) {
+          } else if (meRes.status === 401) {
             try { localStorage.removeItem("token"); } catch {}
             try { localStorage.removeItem("user"); } catch {}
             if (!abort) navigate("/login", { replace: true });
             return;
+          } else if (meRes.status === 404) {
+            const localUser = currentUser || (() => {
+              try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
+            })();
+            if (localUser) {
+              data = {
+                user: {
+                  _id: localUser._id,
+                  username: localUser.username || "",
+                  avatar: localUser.avatar || "",
+                  bio: localUser.bio || "",
+                  fullName: localUser.fullName || "",
+                },
+                stats: { posts: 0, followers: 0, following: 0 },
+                posts: [],
+              };
+            } else {
+              if (!abort) navigate("/login", { replace: true });
+              return;
+            }
           } else {
             urls.unshift(`${API}/api/profile/me`);
           }
