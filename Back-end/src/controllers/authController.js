@@ -2,6 +2,12 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
+const Post = require('../models/Post');
+const Comment = require('../models/Comment');
+const Like = require('../models/Like');
+const Follow = require('../models/Follow');
+const Message = require('../models/Message');
+const Notification = require('../models/Notification');
 
 const generateToken = (userId) =>
   jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -88,10 +94,17 @@ exports.register = async (req, res) => {
 
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const loginValue = String(req.body?.email || "").trim();
+  const password = String(req.body?.password || "");
+  const escapedLogin = loginValue.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      $or: [
+        { email: new RegExp(`^${escapedLogin}$`, "i") },
+        { username: new RegExp(`^${escapedLogin}$`, "i") },
+      ],
+    });
     if (!user) return res.status(400).json({ message: 'Incorrect login or password. Try again' });
 
     const isMatch = await user.comparePassword(password);
@@ -188,5 +201,45 @@ exports.resetPassword = async (req, res) => {
   } catch (e) {
     console.error('resetPassword error:', e);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.deleteAccount = async (req, res) => {
+  const userId = req.user?.id || req.user?._id || req.userId;
+  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+  try {
+    const [postIds, ownCommentIds] = await Promise.all([
+      Post.find({ author: userId }).distinct('_id'),
+      Comment.find({ user: userId }).distinct('_id'),
+    ]);
+
+    const commentFilter = ownCommentIds.length ? { comment: { $in: ownCommentIds } } : null;
+
+    await Promise.all([
+      postIds.length ? Like.deleteMany({ post: { $in: postIds } }) : Promise.resolve(),
+      postIds.length ? Comment.deleteMany({ post: { $in: postIds } }) : Promise.resolve(),
+      postIds.length ? Notification.deleteMany({ post: { $in: postIds } }) : Promise.resolve(),
+
+      Like.deleteMany({ user: userId }),
+      Comment.deleteMany({ user: userId }),
+      Comment.updateMany({}, { $pull: { likes: userId } }),
+      Follow.deleteMany({ $or: [{ follower: userId }, { following: userId }] }),
+      Message.deleteMany({ $or: [{ sender: userId }, { peer: userId }] }),
+      Notification.deleteMany({
+        $or: [
+          { user: userId },
+          { fromUser: userId },
+          ...(commentFilter ? [commentFilter] : []),
+        ],
+      }),
+      postIds.length ? Post.deleteMany({ _id: { $in: postIds } }) : Promise.resolve(),
+      User.findByIdAndDelete(userId),
+    ]);
+
+    return res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('deleteAccount error:', error);
+    return res.status(500).json({ message: 'Server error' });
   }
 };

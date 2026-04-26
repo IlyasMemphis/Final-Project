@@ -4,8 +4,9 @@ import defaultAvatar from "../assets/Default avatar.svg";
 import { buildAuthHeader } from "../utils/authHeader";
 import AvatarCropperModal from "../pages/_AvatarCropperModal";
 import { toast } from "react-hot-toast";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 /** универсальная попытка нескольких эндпоинтов */
 async function tryFetch(urls, init) {

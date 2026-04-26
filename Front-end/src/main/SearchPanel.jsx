@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom"; // ← добавили
 import styles from "../styles/searchpanel.module.css";
 import defaultAvatar from "../assets/Default avatar.svg";
+import { API_BASE_URL } from "../config/api";
+
+const API = API_BASE_URL || "http://localhost:5000";
 
 export default function SearchPanel({ onClose }) {
   const [query, setQuery] = useState("");
@@ -27,17 +30,32 @@ export default function SearchPanel({ onClose }) {
   }, [onClose]);
 
   useEffect(() => {
-    // ! Не очищаем! При пустом query грузим всех
-    const token = localStorage.getItem("token");
-    fetch(
-      `http://localhost:3333/api/search/users?q=${encodeURIComponent(query)}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
+    const ac = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          `${API}/api/search/users?q=${encodeURIComponent(query)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: ac.signal,
+          }
+        );
+        if (!res.ok) {
+          setResults([]);
+          return;
+        }
+        const data = await res.json();
+        setResults(Array.isArray(data) ? data : []);
+      } catch (e) {
+        if (e?.name !== "AbortError") setResults([]);
       }
-    )
-      .then((res) => res.json())
-      .then((data) => setResults(Array.isArray(data) ? data : []))
-      .catch(() => setResults([]));
+    }, query.trim() ? 250 : 0);
+
+    return () => {
+      clearTimeout(timer);
+      ac.abort();
+    };
   }, [query]);
 
   const goToProfile = (userId) => {

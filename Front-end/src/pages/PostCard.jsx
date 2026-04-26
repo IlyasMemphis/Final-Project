@@ -6,18 +6,23 @@ import toast from "react-hot-toast";
 import CommentsModal from "./CommentsModal";
 import { formatTimeAgo } from "../utils/utils.js";
 import { buildAuthHeader } from "../utils/authHeader";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
+const followStatusCache = new Map();
+
+const toId = (v) => String(v?._id || v?.id || v || "");
 
 export default function PostCard({ post: propPost, currentUser, token, notification }) {
   const navigate = useNavigate();                             // ← NEW
   const [post, setPost] = useState(propPost);
   const [modalOpen, setModalOpen] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoaded, setFollowLoaded] = useState(false);
   const [loadingFollow, setLoadingFollow] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(0);
-  const [comments, setComments] = useState([]);
+  const [commentsCount, setCommentsCount] = useState(0);
   const [newComment, setNewComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
 
@@ -45,7 +50,21 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
       .catch(() => { hydratedRef.current = false; });
   }, [post?._id, post?.author]);
 
-  // Лайки поста
+  // Синхронизация локальных счётчиков из поста
+  useEffect(() => {
+    const postLikes = Array.isArray(post?.likes) ? post.likes : [];
+    const likesFromPost = Number.isFinite(post?.likesCount)
+      ? post.likesCount
+      : postLikes.length;
+    const likedFromPost = toId(currentUserId)
+      ? postLikes.some((u) => toId(u) === toId(currentUserId))
+      : false;
+    setLikes(Number.isFinite(likesFromPost) ? likesFromPost : 0);
+    setLiked(!!likedFromPost);
+    setCommentsCount(Number.isFinite(post?.commentsCount) ? post.commentsCount : 0);
+  }, [post?._id, post?.likes, post?.likesCount, post?.commentsCount, currentUserId]);
+
+  // Актуальные лайки из API (источник правды: коллекция Like)
   useEffect(() => {
     if (!post?._id) return;
     let abort = false;
@@ -55,22 +74,19 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
           headers: { ...buildAuthHeader() },
         });
         if (!res.ok) return;
-        const { count, liked } = await res.json();
+        const data = await res.json();
         if (!abort) {
-          setLikes(Number.isFinite(count) ? count : 0);
-          setLiked(!!liked);
+          setLikes(Number.isFinite(data?.count) ? data.count : 0);
+          setLiked(!!data?.liked);
         }
       } catch {
-        if (!abort) {
-          setLikes(post?.likes || 0);
-          setLiked(false);
-        }
+        /* ignore */
       }
     })();
     return () => { abort = true; };
-  }, [post?._id]);
+  }, [post?._id, currentUserId]);
 
-  // Комментарии
+  // Актуальное количество комментариев
   useEffect(() => {
     if (!post?._id) return;
     let abort = false;
@@ -79,27 +95,50 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
         const res = await fetch(`${API}/api/comments/${post._id}`, {
           headers: { ...buildAuthHeader() },
         });
-        const data = res.ok ? await res.json() : [];
-        if (!abort) setComments(Array.isArray(data) ? data : []);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!abort) setCommentsCount(Array.isArray(data) ? data.length : 0);
       } catch {
-        if (!abort) setComments([]);
+        /* ignore */
       }
     })();
     return () => { abort = true; };
   }, [post?._id]);
 
-  // Follow check
+  // Follow check (кэшируется по authorId, чтобы не дёргать сеть для каждого ререндера)
   useEffect(() => {
-    if (!authorId) return;
+    if (!authorId || !currentUserId || toId(authorId) === toId(currentUserId)) {
+      setIsFollowing(false);
+      setFollowLoaded(true);
+      return;
+    }
+    if (followStatusCache.has(toId(authorId))) {
+      setIsFollowing(!!followStatusCache.get(toId(authorId)));
+      setFollowLoaded(true);
+      return;
+    }
+
     let abort = false;
     fetch(`${API}/api/follow/is-following/${authorId}`, {
       headers: { ...buildAuthHeader() },
     })
       .then((res) => (res.ok ? res.json() : { isFollowing: false }))
-      .then((data) => { if (!abort) setIsFollowing(!!data.isFollowing); })
-      .catch(() => { if (!abort) setIsFollowing(false); });
+      .then((data) => {
+        if (!abort) {
+          const value = !!data.isFollowing;
+          followStatusCache.set(toId(authorId), value);
+          setIsFollowing(value);
+          setFollowLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!abort) {
+          setIsFollowing(false);
+          setFollowLoaded(true);
+        }
+      });
     return () => { abort = true; };
-  }, [authorId]);
+  }, [authorId, currentUserId]);
 
   // Подписка/отписка
   const handleFollow = async () => {
@@ -116,8 +155,12 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
         body: JSON.stringify({ userIdToFollow: authorId }),
       });
       if (res.ok) {
-        setIsFollowing((f) => !f);
-        toast.success(isFollowing ? "Unfollowed!" : "Follow is completed!");
+        setIsFollowing((f) => {
+          const next = !f;
+          followStatusCache.set(toId(authorId), next);
+          return next;
+        });
+        toast.success(isFollowing ? "Unfollowed!" : "Follow completed!");
       }
     } finally {
       setLoadingFollow(false);
@@ -160,8 +203,8 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
         body: JSON.stringify({ text }),
       });
       if (res.ok) {
-        const data = await res.json();
-        setComments((prev) => [data.comment, ...prev]);
+        await res.json();
+        setCommentsCount((c) => c + 1);
         setNewComment("");
       } else {
         toast.error("Ошибка добавления комментария");
@@ -202,12 +245,12 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
               <button
                 className={styles.followBtn}
                 onClick={handleFollow}
-                disabled={loadingFollow}
+                disabled={loadingFollow || !followLoaded}
                 style={{
                   background: isFollowing ? "#f2f2f2" : "#0095f6",
                   color: isFollowing ? "#333" : "#fff",
-                  cursor: loadingFollow ? "not-allowed" : "pointer",
-                  opacity: loadingFollow ? 0.7 : 1,
+                  cursor: loadingFollow || !followLoaded ? "not-allowed" : "pointer",
+                  opacity: loadingFollow || !followLoaded ? 0.7 : 1,
                 }}
               >
                 {isFollowing ? "Following" : "Follow"}
@@ -219,7 +262,15 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
         <span className={styles.time}>{formatTimeAgo(post.createdAt || new Date())}</span>
       </div>
 
-      {post.image && <img src={post.image} alt="" className={styles.image} />}
+      {post.image && (
+        <img
+          src={post.image}
+          alt="post"
+          className={styles.image}
+          onClick={() => setModalOpen(true)}
+          style={{ cursor: "pointer" }}
+        />
+      )}
 
       <div className={styles.actions}>
         <button className={styles.iconBtn} onClick={handleLike}>
@@ -243,13 +294,13 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
         </div>
 
         <div style={{ minHeight: 24, marginBottom: 8 }}>
-          {comments.length > 0 && (
+          {commentsCount > 0 && (
             <div
               className={styles.commentsCount}
               onClick={() => setModalOpen(true)}
               style={{ cursor: "pointer", color: "#555", paddingLeft: "15px" }}
             >
-              Посмотреть все комментарии ({comments.length})
+              View all comments ({commentsCount})
             </div>
           )}
         </div>

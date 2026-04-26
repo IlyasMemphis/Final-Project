@@ -3,8 +3,9 @@ import styles from "../styles/notifications.module.css";
 import defaultAvatar from "../assets/Default avatar.svg";
 import CommentsModal from "../pages/CommentsModal";
 import { formatTimeAgo } from "../utils/utils.js";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 function authHeader(rawToken) {
   const t = (rawToken ?? localStorage.getItem("token") ?? "")

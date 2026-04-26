@@ -4,8 +4,9 @@ import styles from "../styles/profile.module.css";
 import defaultAvatar from "../assets/Default avatar.svg";
 import CommentsModal from "../pages/CommentsModal";
 import { buildAuthHeader } from "../utils/authHeader";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 function isHex24(v) {
   return /^[0-9a-fA-F]{24}$/.test(String(v || ""));
@@ -66,6 +67,9 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalPost, setModalPost] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [error, setError] = useState("");
 
   // follow state (для чужого профиля)
@@ -198,6 +202,32 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleteError("");
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`${API}/api/auth/account`, {
+        method: "DELETE",
+        headers: { ...header },
+      });
+      if (!res.ok) throw new Error("Failed to delete account");
+
+      try { localStorage.removeItem("token"); } catch {}
+      try { localStorage.removeItem("user"); } catch {}
+      navigate("/register", { replace: true });
+      setTimeout(() => window.location.reload(), 0);
+    } catch {
+      setDeleteError("Failed to delete account. Please try again.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   if (loading)
     return (
       <div className={styles.page}>
@@ -257,6 +287,22 @@ export default function ProfilePage() {
                     }}
                   >
                     Log out
+                  </button>
+
+                  <button
+                    onClick={handleDeleteAccount}
+                    title="Delete account"
+                    style={{
+                      background: "#fff",
+                      color: "#c62828",
+                      border: "1px solid #ffcaca",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Delete account
                   </button>
                 </div>
               ) : (
@@ -357,6 +403,37 @@ export default function ProfilePage() {
           currentUser={currentUser}
           onClose={() => setModalPost(null)}
         />
+      )}
+
+      {deleteModalOpen && (
+        <div className={styles.confirmOverlay} onMouseDown={() => !deleteLoading && setDeleteModalOpen(false)}>
+          <div className={styles.confirmModal} onMouseDown={(e) => e.stopPropagation()}>
+            <h3 className={styles.confirmTitle}>Delete account?</h3>
+            <p className={styles.confirmText}>
+              This will permanently remove your profile, posts, likes, comments and messages.
+              This action cannot be undone.
+            </p>
+            {deleteError && <div className={styles.confirmError}>{deleteError}</div>}
+            <div className={styles.confirmActions}>
+              <button
+                type="button"
+                className={styles.confirmCancel}
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.confirmDelete}
+                onClick={confirmDeleteAccount}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? "Deleting..." : "Delete account"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

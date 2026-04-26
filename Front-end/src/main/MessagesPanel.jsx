@@ -3,8 +3,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/messagespanel.module.css";
 import defaultAvatar from "../assets/Default avatar.svg";
+import { API_BASE_URL } from "../config/api";
 
-const API = "http://localhost:3333";
+const API = API_BASE_URL || "http://localhost:5000";
 
 /* helpers */
 function authHeader(raw) {
@@ -85,12 +86,7 @@ export default function MessagesPanel({ onClose, token }) {
   const [err, setErr] = useState("");
 
   async function loadThreads(signal) {
-    const urls = [
-      `${API}/api/messages/threads`,
-      `${API}/api/threads`,
-      `${API}/api/messages`,
-      `${API}/messages/threads`,
-    ];
+    const urls = [`${API}/api/messages/threads`];
     for (const url of urls) {
       try {
         const r = await fetch(url, { headers: authHeader(authToken), signal });

@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import styles from "../styles/login.module.css";
 import img from "../assets/Background.svg";
 import ICHGRAM from "../assets/ICHGRA 2.svg";
+import http from "../config/http";
 
 // ✅ Схема валидации через yup
 const schema = yup.object().shape({
@@ -46,18 +47,18 @@ const Login = () => {
     try {
       setServerError("");
       // !! Важно: ждем и токен, и user
-      const res = await axios.post("/api/auth/login", data);
+      const res = await http.post("/api/auth/login", data);
       console.log('Login succesfull:', res.data);
       localStorage.setItem("token", res.data.token);
       // Сохраняем user в localStorage (это критично для лайков и проч.)
       if (res.data.user) {
         localStorage.setItem("user", JSON.stringify(res.data.user));
       }
-      // Тут можно сделать setUser в context/redux если используешь
+      toast.success("Successfully signed in", { position: "top-center" });
       navigate("/"); // редирект на главную
     } catch (err) {
       const message =
-        err.response?.data?.message || "This user does not exist";
+        err.response?.data?.message || "Cannot connect to server. Check backend URL.";
       setServerError(message);
       console.error("Login failed:", err.response?.data?.message || "Unknown error");
     }
