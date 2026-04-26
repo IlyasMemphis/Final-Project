@@ -6,10 +6,16 @@ function isObjectId(id) {
   return /^[0-9a-fA-F]{24}$/.test(String(id || ''));
 }
 
+function authUserId(req) {
+  return req.user?._id || req.user?.id || req.user?.userId || req.userId || null;
+}
+
 /* ===== Список тредов (последние сообщения по собеседнику) ===== */
 async function getThreads(req, res) {
   try {
-    const me = new mongoose.Types.ObjectId(req.user._id);
+    const meId = authUserId(req);
+    if (!isObjectId(meId)) return res.status(401).json({ message: 'Unauthorized' });
+    const me = new mongoose.Types.ObjectId(meId);
 
     const pipeline = [
       { $match: { $or: [{ sender: me }, { peer: me }] } },
@@ -81,7 +87,9 @@ async function getInbox(req, res) { return getThreads(req, res); }
 */
 async function getThread(req, res) {
   try {
-    const me = new mongoose.Types.ObjectId(req.user._id);
+    const meId = authUserId(req);
+    if (!isObjectId(meId)) return res.status(401).json({ message: 'Unauthorized' });
+    const me = new mongoose.Types.ObjectId(meId);
     const peerId = req.params.peerId || req.query.peerId;
 
     if (!isObjectId(peerId)) {
@@ -117,7 +125,9 @@ async function getThread(req, res) {
 */
 async function sendMessage(req, res) {
   try {
-    const me = new mongoose.Types.ObjectId(req.user._id);
+    const meId = authUserId(req);
+    if (!isObjectId(meId)) return res.status(401).json({ message: 'Unauthorized' });
+    const me = new mongoose.Types.ObjectId(meId);
     const peerId = req.body.peerId || req.body.to || req.params.peerId;
     const text = String(req.body.text ?? '');
 
@@ -153,7 +163,9 @@ async function sendMessageParam(req, res) {
 /* ===== Прочтения ===== */
 async function markThreadRead(req, res) {
   try {
-    const me = new mongoose.Types.ObjectId(req.user._id);
+    const meId = authUserId(req);
+    if (!isObjectId(meId)) return res.status(401).json({ message: 'Unauthorized' });
+    const me = new mongoose.Types.ObjectId(meId);
     const peerId = req.params.peerId || req.query.peerId;
 
     if (!isObjectId(peerId)) {
@@ -175,7 +187,9 @@ async function markThreadRead(req, res) {
 
 async function markMessageRead(req, res) {
   try {
-    const me = new mongoose.Types.ObjectId(req.user._id);
+    const meId = authUserId(req);
+    if (!isObjectId(meId)) return res.status(401).json({ message: 'Unauthorized' });
+    const me = new mongoose.Types.ObjectId(meId);
     const { messageId } = req.params;
 
     if (!isObjectId(messageId)) {

@@ -25,6 +25,7 @@ const fmtDateHuman = (d) => {
   return dt.toLocaleDateString([], { year: "numeric", month: "short", day: "2-digit" });
 };
 const dayKey = (d) => (d ? new Date(d).toDateString() : "");
+const idOf = (v) => String(v?._id || v?.id || v?.userId || v || "");
 
 /** пробует несколько запросов подряд */
 async function tryRequests(requests) {
@@ -95,6 +96,7 @@ export default function MessagesPage() {
     try { return JSON.parse(localStorage.getItem("user") || "null"); }
     catch { return null; }
   }, []);
+  const meId = useMemo(() => idOf(me), [me]);
 
   const [threads, setThreads] = useState([]);
   const [loadingThreads, setLoadingThreads] = useState(true);
@@ -196,7 +198,7 @@ export default function MessagesPage() {
 
     const optimistic = {
       _id: `tmp_${Date.now()}`,
-      sender: me?._id,
+      sender: meId,
       peer: peerId,
       text: body,
       createdAt: new Date().toISOString(),
@@ -209,6 +211,7 @@ export default function MessagesPage() {
     try {
       const saved = await tryRequests(ENDPOINTS.send(peerId, body, token));
       const normalized = saved?.message || saved;
+      if (!idOf(normalized?.sender)) normalized.sender = meId;
       setMessages((m) => m.map((x) => (x._id === optimistic._id ? normalized : x)));
     } catch {
       setMessages((m) => m.filter((x) => x._id !== optimistic._id));
@@ -277,7 +280,7 @@ export default function MessagesPage() {
                   {messages.map((m, idx) => {
                     const prev = messages[idx - 1];
                     const needDivider = idx > 0 && dayKey(m.createdAt) !== dayKey(prev?.createdAt);
-                    const mine = String(m.sender?._id || m.sender) === String(me?._id);
+                    const mine = idOf(m.sender) === meId;
 
                     return (
                       <React.Fragment key={m._id}>
