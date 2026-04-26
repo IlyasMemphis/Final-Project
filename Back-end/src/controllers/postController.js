@@ -20,7 +20,7 @@ exports.getAllPosts = async (req, res) => {
     const posts = await Post.find()
       .sort({ createdAt: -1 })
       .populate('author', 'username avatar _id');
-    res.json(posts);
+    res.json(posts.filter((post) => !!post.author));
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: 'Server error' });
@@ -31,7 +31,7 @@ exports.getPostById = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
       .populate('author', 'username avatar _id'); // <-- populate
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    if (!post || !post.author) return res.status(404).json({ message: 'Post not found' });
     res.json(post);
   } catch (e) {
     console.error(e);

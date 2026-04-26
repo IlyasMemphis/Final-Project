@@ -21,7 +21,12 @@ async function getProfileSummary(req, res) {
     const meId = req.user?._id || req.user?.id;
 
     const user = await resolveUser(idOrUsername, meId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+      if (idOrUsername === 'me') {
+        return res.status(401).json({ message: 'Session is invalid. Please sign in again' });
+      }
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     const uid = new mongoose.Types.ObjectId(user._id);
 

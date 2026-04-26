@@ -11,8 +11,8 @@ router.get('/user/:userId', postController.getUserPosts)
 router.get('/', postController.getAllPosts)
 router.get('/:id', postController.getPostById)
 
-router.post('/', authMiddleware, upload.single('image', postController.createPost))
-router.put('/:id', authMiddleware, upload.single('image', postController.updatePost))
+router.post('/', authMiddleware, upload.single('image'), postController.createPost)
+router.put('/:id', authMiddleware, upload.single('image'), postController.updatePost)
 router.delete('/:id', authMiddleware, postController.deletePost)
 
 module.exports = router

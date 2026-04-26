@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-module.exports = function auth(req, res, next) {
+module.exports = async function auth(req, res, next) {
   try {
     const raw = req.headers.authorization || req.headers.Authorization || '';
     let token = raw.startsWith('Bearer ') ? raw.slice(7) : raw;
@@ -10,6 +11,9 @@ module.exports = function auth(req, res, next) {
     const payload = jwt.verify(token, process.env.JWT_SECRET); // важен тот же секрет, что и при логине
     const uid = payload.id || payload._id || payload.userId;
     if (!uid) return res.status(401).json({ message: 'Bad token payload' });
+
+    const exists = await User.exists({ _id: uid });
+    if (!exists) return res.status(401).json({ message: 'User not found' });
 
     // Положим идентификатор во все ожидаемые места — для совместимости со старыми контроллерами
     req.user = { id: uid, _id: uid, userId: uid };

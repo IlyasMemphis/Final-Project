@@ -19,7 +19,9 @@ async function tryFetch(urls, init) {
     try {
       const r = await fetch(u, init);
       if (r.ok) return await r.json();
-      err = new Error(`${r.status} ${r.statusText}`);
+      const nextErr = new Error(`${r.status} ${r.statusText}`);
+      nextErr.status = r.status;
+      err = nextErr;
     } catch (e) {
       err = e;
     }
@@ -121,19 +123,11 @@ export default function ProfilePage() {
             if (!abort) navigate("/login", { replace: true });
             return;
           } else if (meRes.status === 404) {
-            if (localUser) {
-              data = {
-                user: {
-                  _id: localUserId,
-                  username: localUser.username || "",
-                  avatar: localUser.avatar || "",
-                  bio: localUser.bio || "",
-                  fullName: localUser.fullName || "",
-                },
-                stats: { posts: 0, followers: 0, following: 0 },
-                posts: [],
-              };
+            if (localUser?.username) {
+              urls.unshift(`${API}/api/profile/${encodeURIComponent(localUser.username)}`);
             } else {
+              try { localStorage.removeItem("token"); } catch {}
+              try { localStorage.removeItem("user"); } catch {}
               if (!abort) navigate("/login", { replace: true });
               return;
             }
@@ -164,6 +158,12 @@ export default function ProfilePage() {
         }
       } catch (e) {
         console.error("Profile load error:", e);
+        if (e?.status === 401 && !abort) {
+          try { localStorage.removeItem("token"); } catch {}
+          try { localStorage.removeItem("user"); } catch {}
+          navigate("/login", { replace: true });
+          return;
+        }
         if (!abort) setError("Failed to load profile");
       } finally {
         if (!abort) setLoading(false);

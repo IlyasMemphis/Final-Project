@@ -21,6 +21,7 @@ const messageRoutes = require('./src/routes/messageRoutes')
 const followRoutes = require('./src/routes/followRoutes')
 const notificationRoutes = require('./src/routes/notifications')
 const usersRoutes = require('./src/routes/usersRoutes')
+const authMiddleware = require('./src/middleware/auth')
 
 const setupSocket = require('./src/socket/socket')
 
@@ -57,6 +58,8 @@ app.use('/uploads', express.static(UPLOAD_ROOT))
 
 /* -------------------------------- helpers --------------------------------- */
 function getUserIdFromToken(req) {
+  const userFromMiddleware = req.user?._id || req.user?.id || req.userId
+  if (userFromMiddleware) return userFromMiddleware
   try {
     const h = req.headers.authorization || ''
     const m = h.match(/^Bearer\s+(.+)/i)
@@ -65,10 +68,45 @@ function getUserIdFromToken(req) {
     return payload.id || payload._id || payload.userId || null
   } catch { return null }
 }
-function buildPublicUrl(req, rel) {
+function requestProto(req) {
+  const host = String(req.get('host') || '').toLowerCase()
+  const isLocalHost = host.startsWith('localhost') || host.startsWith('127.0.0.1')
+  if (!isLocalHost) return 'https'
   const xfProto = (req.headers['x-forwarded-proto'] || '').toString().split(',')[0].trim()
-  const proto = xfProto || req.protocol || 'http'
+  return xfProto || req.protocol || 'http'
+}
+function buildPublicUrl(req, rel) {
+  const proto = requestProto(req)
   return `${proto}://${req.get('host')}${rel.startsWith('/') ? '' : '/'}${rel}`
+}
+function normalizeMediaUrl(req, maybeUrl) {
+  if (!maybeUrl) return maybeUrl
+  const raw = String(maybeUrl).trim()
+  if (!raw) return raw
+
+  const uploadMatch = raw.match(/\/uploads\/(avatars|posts)\/[^?#]+/i)
+  if (uploadMatch?.[0]) {
+    return buildPublicUrl(req, uploadMatch[0])
+  }
+
+  try {
+    const url = new URL(raw)
+    if (url.protocol === 'http:' && requestProto(req) === 'https') {
+      url.protocol = 'https:'
+      return url.toString()
+    }
+  } catch {}
+
+  return raw
+}
+async function userExists(userId) {
+  if (!userId) return false
+  try {
+    const User = require('./src/models/User')
+    return !!(await User.exists({ _id: userId }))
+  } catch {
+    return false
+  }
 }
 function safeReadJson(file, fallback = []) {
   try {
@@ -99,19 +137,20 @@ const avatarFields = uploadAvatar.fields([
 
 async function handleAvatarUpload(req, res) {
   try {
+    const userId = getUserIdFromToken(req)
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' })
+    if (!(await userExists(userId))) {
+      return res.status(401).json({ error: 'Session is invalid. Please sign in again' })
+    }
+
     const file = (req.files?.file?.[0]) || (req.files?.avatar?.[0]) || req.file
     if (!file) return res.status(400).json({ error: 'No file' })
 
     const rel = `/uploads/avatars/${path.basename(file.path)}`
     const url = buildPublicUrl(req, rel)
 
-    const userId = getUserIdFromToken(req)
-    if (userId) {
-      try {
-        const User = require('./src/models/User')
-        await User.findByIdAndUpdate(userId, { avatar: url }, { new: true })
-      } catch (_) { /* нет модели — ок */ }
-    }
+    const User = require('./src/models/User')
+    await User.findByIdAndUpdate(userId, { avatar: url }, { new: true })
 
     return res.json({ url })
   } catch (e) {
@@ -121,9 +160,9 @@ async function handleAvatarUpload(req, res) {
 }
 
 // Совместимые пути
-app.post('/api/users/me/avatar', avatarFields, handleAvatarUpload)
-app.post('/api/upload/avatar', avatarFields, handleAvatarUpload)
-app.post('/api/upload', avatarFields, handleAvatarUpload)
+app.post('/api/users/me/avatar', authMiddleware, avatarFields, handleAvatarUpload)
+app.post('/api/upload/avatar', authMiddleware, avatarFields, handleAvatarUpload)
+app.post('/api/upload', authMiddleware, avatarFields, handleAvatarUpload)
 
 /* ---------------------------- PATCH profile me ----------------------------- */
 async function handlePatchMe(req, res) {
@@ -140,12 +179,9 @@ async function handlePatchMe(req, res) {
     if (typeof avatarUrl === 'string') updates.avatar = avatarUrl
 
     let savedUser = null
-    try {
-      const User = require('./src/models/User')
-      savedUser = await User.findByIdAndUpdate(userId, updates, { new: true })
-    } catch (_) {
-      savedUser = { _id: userId, ...updates }
-    }
+    const User = require('./src/models/User')
+    savedUser = await User.findByIdAndUpdate(userId, updates, { new: true })
+    if (!savedUser) return res.status(401).json({ error: 'Session is invalid. Please sign in again' })
 
     return res.json({ ok: true, user: savedUser })
   } catch (e) {
@@ -153,10 +189,10 @@ async function handlePatchMe(req, res) {
     return res.status(500).json({ error: 'Save failed' })
   }
 }
-app.patch('/api/users/me', handlePatchMe)
-app.patch('/api/profile/me', handlePatchMe)
-app.patch('/api/profile', handlePatchMe)
-app.patch('/api/user/me', handlePatchMe)
+app.patch('/api/users/me', authMiddleware, handlePatchMe)
+app.patch('/api/profile/me', authMiddleware, handlePatchMe)
+app.patch('/api/profile', authMiddleware, handlePatchMe)
+app.patch('/api/user/me', authMiddleware, handlePatchMe)
 
 /* ---------------------------- POSTS (совместимость) ------------------------ */
 /** Хранилище для медиа постов */
@@ -230,10 +266,14 @@ async function handleCreatePost(req, res) {
 
     try {
       if (!userId) return res.status(401).json({ error: 'Unauthorized' })
+      if (!(await userExists(userId))) {
+        return res.status(401).json({ error: 'Session is invalid. Please sign in again' })
+      }
       const created = await dbCreatePost({ userId, mediaUrl, description: desc })
+      if (created?.image) created.image = normalizeMediaUrl(req, created.image)
       return res.json({ ok: true, post: created })
     } catch (dbErr) {
-      const created = mockCreatePost({ userId, mediaUrl, description: desc })
+      const created = mockCreatePost({ userId, mediaUrl: normalizeMediaUrl(req, mediaUrl), description: desc })
       return res.json({ ok: true, post: created })
     }
   } catch (e) {
@@ -250,10 +290,18 @@ async function handleListPosts(req, res) {
         .sort({ createdAt: -1 })
         .limit(100)
         .populate('author', 'username avatar')
-      return res.json(posts)
+      const normalized = posts
+        .filter((post) => !!post.author)
+        .map((post) => {
+          const plain = typeof post.toObject === 'function' ? post.toObject() : post
+          plain.image = normalizeMediaUrl(req, plain.image)
+          return plain
+        })
+      return res.json(normalized)
     } catch (_) {
       const list = safeReadJson(POSTS_INDEX, [])
-      return res.json(list)
+      const normalized = list.map((post) => ({ ...post, image: normalizeMediaUrl(req, post.image) }))
+      return res.json(normalized)
     }
   } catch (e) {
     console.error('List posts error:', e)
@@ -268,11 +316,14 @@ async function handleGetPostById(req, res) {
       const Post = require('./src/models/Post')
       const p = await Post.findById(id).populate('author', 'username avatar')
       if (!p) return res.status(404).json({ error: 'Not found' })
+      if (!p.author) return res.status(404).json({ error: 'Not found' })
+      if (p.image) p.image = normalizeMediaUrl(req, p.image)
       return res.json(p)
     } catch (_) {
       const list = safeReadJson(POSTS_INDEX, [])
       const p = list.find(x => String(x._id) === String(id))
       if (!p) return res.status(404).json({ error: 'Not found' })
+      if (p.image) p.image = normalizeMediaUrl(req, p.image)
       return res.json(p)
     }
   } catch (e) {
@@ -341,13 +392,17 @@ async function handleUpdatePost(req, res) {
 
     const userId = getUserIdFromToken(req)
     if (!userId) return res.status(401).json({ error: 'Unauthorized' })
+    if (!(await userExists(userId))) {
+      return res.status(401).json({ error: 'Session is invalid. Please sign in again' })
+    }
 
     try {
       const updated = await dbUpdatePost({ id, userId, mediaUrl, description: desc })
       if (!updated) return res.status(404).json({ error: 'Not found' })
+      if (updated?.image) updated.image = normalizeMediaUrl(req, updated.image)
       return res.json({ ok: true, post: updated })
     } catch (dbErr) {
-      const updated = mockUpdatePost({ id, mediaUrl, description: desc })
+      const updated = mockUpdatePost({ id, mediaUrl: normalizeMediaUrl(req, mediaUrl), description: desc })
       if (!updated) return res.status(404).json({ error: 'Not found' })
       return res.json({ ok: true, post: updated })
     }
@@ -359,12 +414,12 @@ async function handleUpdatePost(req, res) {
 
 /* ----------- Совместимые пути (чтобы фронт ничего не менять) -------------- */
 // CREATE
-app.post('/api/posts', postFields, handleCreatePost)          // POST /api/posts
-app.post('/api/post', postFields, handleCreatePost)           // POST /api/post
-app.post('/api/create-post', postFields, handleCreatePost)    // POST /api/create-post
-app.post('/post', postFields, handleCreatePost)               // POST /post (старый)
-app.post('/posts/create', postFields, handleCreatePost)       // POST /posts/create
-app.post('/api/posts/create', postFields, handleCreatePost)   // POST /api/posts/create
+app.post('/api/posts', authMiddleware, postFields, handleCreatePost)          // POST /api/posts
+app.post('/api/post', authMiddleware, postFields, handleCreatePost)           // POST /api/post
+app.post('/api/create-post', authMiddleware, postFields, handleCreatePost)    // POST /api/create-post
+app.post('/post', authMiddleware, postFields, handleCreatePost)               // POST /post (старый)
+app.post('/posts/create', authMiddleware, postFields, handleCreatePost)       // POST /posts/create
+app.post('/api/posts/create', authMiddleware, postFields, handleCreatePost)   // POST /api/posts/create
 
 // LIST
 app.get('/api/posts', handleListPosts)                        // GET /api/posts
@@ -375,22 +430,22 @@ app.get('/api/posts/:id', handleGetPostById)
 app.get('/post/:id', handleGetPostById)
 
 // UPDATE (НОВЫЕ/СОВМЕСТИМЫЕ МАРШРУТЫ, чтобы починить 404)
-app.patch('/api/posts/:id', postFields, handleUpdatePost)
-app.put('/api/posts/:id', postFields, handleUpdatePost)
-app.post('/api/posts/:id/update', postFields, handleUpdatePost)
+app.patch('/api/posts/:id', authMiddleware, postFields, handleUpdatePost)
+app.put('/api/posts/:id', authMiddleware, postFields, handleUpdatePost)
+app.post('/api/posts/:id/update', authMiddleware, postFields, handleUpdatePost)
 
 // Полностью совместимые старые пути:
-app.post('/post/:id/update', postFields, handleUpdatePost)
-app.put('/post/:id/update', postFields, handleUpdatePost)
-app.patch('/post/:id/update', postFields, handleUpdatePost)
+app.post('/post/:id/update', authMiddleware, postFields, handleUpdatePost)
+app.put('/post/:id/update', authMiddleware, postFields, handleUpdatePost)
+app.patch('/post/:id/update', authMiddleware, postFields, handleUpdatePost)
 
-app.post('/api/post/:id/update', postFields, handleUpdatePost)
-app.put('/api/post/:id/update', postFields, handleUpdatePost)
-app.patch('/api/post/:id/update', postFields, handleUpdatePost)
+app.post('/api/post/:id/update', authMiddleware, postFields, handleUpdatePost)
+app.put('/api/post/:id/update', authMiddleware, postFields, handleUpdatePost)
+app.patch('/api/post/:id/update', authMiddleware, postFields, handleUpdatePost)
 
-app.post('/posts/:id/update', postFields, handleUpdatePost)
-app.put('/posts/:id/update', postFields, handleUpdatePost)
-app.patch('/posts/:id/update', postFields, handleUpdatePost)
+app.post('/posts/:id/update', authMiddleware, postFields, handleUpdatePost)
+app.put('/posts/:id/update', authMiddleware, postFields, handleUpdatePost)
+app.patch('/posts/:id/update', authMiddleware, postFields, handleUpdatePost)
 
 /* --------------------------------- ROUTES --------------------------------- */
 app.use('/api/auth', authRoutes)

@@ -5,7 +5,6 @@ import defaultAvatar from "../assets/Default avatar.svg";
 import { API_BASE_URL } from "../config/api";
 
 const API = API_BASE_URL || "http://localhost:5000";
-const userIdOf = (u) => u?._id || u?.id || u?.userId || "";
 
 /* ----- utils ----- */
 async function readBody(res) {
@@ -87,12 +86,7 @@ export default function CreatePostModal({
   }
 
   const goToProfileAndReload = () => {
-    const uid = userIdOf(currentUser);
-    const profilePath = uid
-      ? `/profile/${uid}`
-      : currentUser?.username
-      ? `/profile/${encodeURIComponent(currentUser.username)}`
-      : "/profile";
+    const profilePath = "/profile/me";
     try { navigate(profilePath, { replace: true }); } catch {}
     setTimeout(() => window.location.reload(), 0);
   };
