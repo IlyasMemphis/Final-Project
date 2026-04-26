@@ -25,8 +25,8 @@ export default function Explore({ token, currentUser }) {
         setLoading(true);
         setErr("");
 
-        // 1) основная попытка — /api/explore
-        const r1 = await fetch(`${API}/api/explore`, { headers: authHeader(token) });
+        // 1) основная попытка — /api/explore (больше постов, сортировка по новизне)
+        const r1 = await fetch(`${API}/api/explore?sort=new&limit=90&page=1`, { headers: authHeader(token) });
         let data = r1.ok ? await r1.json() : [];
 
         // 2) если пусто/ошибка — пробуем /api/posts (фид)
