@@ -50,9 +50,13 @@ const Login = () => {
       const res = await http.post("/api/auth/login", data);
       console.log('Login succesfull:', res.data);
       localStorage.setItem("token", res.data.token);
-      // Сохраняем user в localStorage (это критично для лайков и проч.)
       if (res.data.user) {
-        localStorage.setItem("user", JSON.stringify(res.data.user));
+        const normalizedUser = {
+          ...res.data.user,
+          _id: res.data.user._id || res.data.user.id || res.data.user.userId || "",
+          id: res.data.user.id || res.data.user._id || res.data.user.userId || "",
+        };
+        localStorage.setItem("user", JSON.stringify(normalizedUser));
       }
       toast.success("Successfully signed in", { position: "top-center" });
       navigate("/"); // редирект на главную

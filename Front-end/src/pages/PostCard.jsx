@@ -26,7 +26,11 @@ export default function PostCard({ post: propPost, currentUser, token, notificat
   const [newComment, setNewComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
 
-  const currentUserId = currentUser?._id || localStorage.getItem("userId");
+  const currentUserId =
+    currentUser?._id ||
+    currentUser?.id ||
+    currentUser?.userId ||
+    localStorage.getItem("userId");
   const authorId = post?.author?._id;
 
   // helper: перейти в профиль

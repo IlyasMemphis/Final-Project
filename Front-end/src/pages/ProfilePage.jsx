@@ -7,6 +7,7 @@ import { buildAuthHeader } from "../utils/authHeader";
 import { API_BASE_URL } from "../config/api";
 
 const API = API_BASE_URL || "http://localhost:5000";
+const userIdOf = (u) => String(u?._id || u?.id || u?.userId || "");
 
 function isHex24(v) {
   return /^[0-9a-fA-F]{24}$/.test(String(v || ""));
@@ -96,13 +97,15 @@ export default function ProfilePage() {
           try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
         })();
 
-        if (localUser?._id) {
-          urls.push(`${API}/api/users/profile/${localUser._id}`);
-          urls.push(`${API}/api/users/${localUser._id}`);
+        const localUserId = userIdOf(localUser);
+        if (localUserId) {
+          urls.push(`${API}/api/users/profile/${localUserId}`);
+          urls.push(`${API}/api/users/${localUserId}`);
         }
         let data = null;
+        const currentUserId = userIdOf(currentUser);
         const isMyProfileRequest =
-          token && (id === "me" || (currentUser?._id && String(id) === String(currentUser._id)));
+          token && (id === "me" || (currentUserId && String(id) === currentUserId));
 
         if (isMyProfileRequest) {
           const meRes = await fetch(`${API}/api/profile/me`, {
@@ -121,7 +124,7 @@ export default function ProfilePage() {
             if (localUser) {
               data = {
                 user: {
-                  _id: localUser._id,
+                  _id: localUserId,
                   username: localUser.username || "",
                   avatar: localUser.avatar || "",
                   bio: localUser.bio || "",
@@ -173,7 +176,7 @@ export default function ProfilePage() {
   }, [idOrUsername, token]);
 
   const itsMe =
-    user && currentUser && String(user._id) === String(currentUser._id);
+    user && currentUser && String(user._id) === userIdOf(currentUser);
 
   // *** ВЫЧИСЛЯЕМ ССЫЛКУ (website) ***
   const website = useMemo(() => {

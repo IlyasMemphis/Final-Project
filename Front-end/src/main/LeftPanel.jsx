@@ -23,6 +23,7 @@ import defaultAvatar from "../assets/Default avatar.svg";
 import { API_BASE_URL } from "../config/api";
 
 const API = API_BASE_URL || "http://localhost:5000";
+const userIdOf = (u) => u?._id || u?.id || u?.userId || "";
 
 function authHeader(token) {
   const t = (token ?? localStorage.getItem("token") ?? "")
@@ -270,7 +271,9 @@ export default function LeftPanel({
   const isProfileActive =
     routeActive === "profile" && !searchOpen && !messagesOpen && !notificationsOpen;
 
-  const profilePath = token ? "/profile/me" : "/profile";
+  const profilePath = token
+    ? (userIdOf(user) ? `/profile/${userIdOf(user)}` : "/profile/me")
+    : "/profile";
 
   return (
     <div className={styles.container}>
