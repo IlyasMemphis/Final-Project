@@ -92,6 +92,7 @@ export default function ProfilePage() {
             ? `${API}/api/profile/${id}`
             : `${API}/api/profile/${encodeURIComponent(id)}`,
         ];
+        let data = null;
         const isMyProfileRequest =
           token && (id === "me" || (currentUser?._id && String(id) === String(currentUser._id)));
 
@@ -153,7 +154,8 @@ export default function ProfilePage() {
           setStats(data.stats || { posts: 0, followers: 0, following: 0 });
           setPosts(Array.isArray(data.posts) ? data.posts : []);
         }
-      } catch {
+      } catch (e) {
+        console.error("Profile load error:", e);
         if (!abort) setError("Failed to load profile");
       } finally {
         if (!abort) setLoading(false);
