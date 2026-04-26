@@ -92,8 +92,23 @@ export default function ProfilePage() {
             ? `${API}/api/profile/${id}`
             : `${API}/api/profile/${encodeURIComponent(id)}`,
         ];
+        if (token && (id === "me" || (currentUser?._id && String(id) === String(currentUser._id)))) {
+          urls.unshift(`${API}/api/profile/me`);
+        }
         // важное: выключаем кэш браузера
-        const data = await tryFetch(urls, { headers: header, cache: "no-store" });
+        let data;
+        try {
+          data = await tryFetch(urls, { headers: header, cache: "no-store" });
+        } catch {
+          if (token && id !== "me") {
+            data = await tryFetch([`${API}/api/profile/me`], {
+              headers: header,
+              cache: "no-store",
+            });
+          } else {
+            throw new Error("Failed to load profile");
+          }
+        }
 
         if (!abort) {
           setUser(data.user);

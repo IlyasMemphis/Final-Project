@@ -270,11 +270,7 @@ export default function LeftPanel({
   const isProfileActive =
     routeActive === "profile" && !searchOpen && !messagesOpen && !notificationsOpen;
 
-  const profilePath = user?._id
-    ? `/profile/${user._id}`
-    : user?.username
-    ? `/profile/${encodeURIComponent(user.username)}`
-    : "/profile";
+  const profilePath = token ? "/profile/me" : "/profile";
 
   return (
     <div className={styles.container}>
