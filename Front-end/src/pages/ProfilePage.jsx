@@ -92,21 +92,39 @@ export default function ProfilePage() {
             ? `${API}/api/profile/${id}`
             : `${API}/api/profile/${encodeURIComponent(id)}`,
         ];
-        if (token && (id === "me" || (currentUser?._id && String(id) === String(currentUser._id)))) {
-          urls.unshift(`${API}/api/profile/me`);
+        const isMyProfileRequest =
+          token && (id === "me" || (currentUser?._id && String(id) === String(currentUser._id)));
+
+        if (isMyProfileRequest) {
+          const meRes = await fetch(`${API}/api/profile/me`, {
+            headers: header,
+            cache: "no-store",
+          });
+
+          if (meRes.ok) {
+            data = await meRes.json();
+          } else if (meRes.status === 401 || meRes.status === 404) {
+            try { localStorage.removeItem("token"); } catch {}
+            try { localStorage.removeItem("user"); } catch {}
+            if (!abort) navigate("/login", { replace: true });
+            return;
+          } else {
+            urls.unshift(`${API}/api/profile/me`);
+          }
         }
         // важное: выключаем кэш браузера
-        let data;
-        try {
-          data = await tryFetch(urls, { headers: header, cache: "no-store" });
-        } catch {
-          if (token && id !== "me") {
-            data = await tryFetch([`${API}/api/profile/me`], {
-              headers: header,
-              cache: "no-store",
-            });
-          } else {
-            throw new Error("Failed to load profile");
+        if (!data) {
+          try {
+            data = await tryFetch(urls, { headers: header, cache: "no-store" });
+          } catch {
+            if (token && id !== "me") {
+              data = await tryFetch([`${API}/api/profile/me`], {
+                headers: header,
+                cache: "no-store",
+              });
+            } else {
+              throw new Error("Failed to load profile");
+            }
           }
         }
 
